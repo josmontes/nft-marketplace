@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { Fragment, FunctionComponent } from "react";
-import { NftMeta } from "../../../types/nft";
+import { NftMeta } from "@types/nft";
 
 type NftItemProps = {
   nft: NftMeta;
