@@ -1,4 +1,6 @@
+import { setupHooks, Web3Hooks } from "@hooks/web3/setup";
 import { MetaMaskInpageProvider } from "@metamask/providers";
+import { Web3Dependencies } from "@_types/hooks";
 import { Contract, ethers, providers } from "ethers";
 
 declare global {
@@ -7,15 +9,14 @@ declare global {
   }
 }
 
-export type Web3Params = {
-  ethereum: MetaMaskInpageProvider | null;
-  provider: providers.Web3Provider | null;
-  contract: Contract | null;
+type Nullable<T> = {
+  [P in keyof T]: T[P] | null;
 };
 
 export type Web3State = {
   isLoading: boolean; // is the web3 provider loading
-} & Web3Params;
+  hooks: Web3Hooks; // hooks for the web3 provider
+} & Nullable<Web3Dependencies>;
 
 export const createDefaultState = (): Web3State => {
   return {
@@ -23,6 +24,22 @@ export const createDefaultState = (): Web3State => {
     ethereum: null,
     provider: null,
     contract: null,
+    hooks: setupHooks({} as any),
+  };
+};
+
+export const createWeb3State = ({
+  ethereum,
+  provider,
+  contract,
+  isLoading,
+}: Web3Dependencies & { isLoading: boolean }) => {
+  return {
+    isLoading,
+    ethereum,
+    provider,
+    contract,
+    hooks: setupHooks({ ethereum, provider, contract }),
   };
 };
 
@@ -32,7 +49,6 @@ export const loadContract = async (
   name: string, // name of the contract
   provider: providers.Web3Provider // provider to use
 ): Promise<Contract> => {
-
   if (!NETWORK_ID) return Promise.reject("Network Id not set");
 
   const res = await fetch(`/contracts/${name}.json`);
