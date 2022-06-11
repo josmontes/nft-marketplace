@@ -6,10 +6,11 @@ export type Web3Dependencies = {
   ethereum: MetaMaskInpageProvider;
   provider: providers.Web3Provider;
   contract: Contract;
+  isLoading: boolean;
 };
 
-export type HookFactory<D = any, P = any> = {
-  (d: Partial<Web3Dependencies>): (params: P) => SWRResponse<D>;
+export type HookFactory<D = any, R = any, P = any> = {
+  (d: Partial<Web3Dependencies>): (params?: P) => SWRResponse<D> & R;
 };
 // Separate alternative
 // export type AccountHookFactory<D = any, P = any> = {
@@ -17,4 +18,3 @@ export type HookFactory<D = any, P = any> = {
 // };
 // export type AccountHook<D = any, P = any> = (params: P) => AccountResponse<D>;
 // export type AccountResponse<D = any> = SWRResponse<D>;
-
