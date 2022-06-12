@@ -85,11 +85,7 @@ contract NftMarket is ERC721URIStorage {
         return tokens;
     }
 
-    function getOwnedTokens()
-        public
-        view
-        returns (Token[] memory)
-    {
+    function getOwnedTokens() public view returns (Token[] memory) {
         uint256 ownedTokensCount = ERC721.balanceOf(msg.sender);
         Token[] memory tokens = new Token[](ownedTokensCount);
 
@@ -101,7 +97,6 @@ contract NftMarket is ERC721URIStorage {
         }
 
         return tokens;
-
     }
 
     function mintToken(string memory tokenURI, uint256 price)
@@ -159,12 +154,12 @@ contract NftMarket is ERC721URIStorage {
     ) internal virtual override {
         super._beforeTokenTransfer(from, to, tokenId);
 
-        // Minted token will be added to the list of tokens
         if (from == address(0)) {
             _addTokenToAllTokens(tokenId);
+        } else if (from != to) {
+            _removeTokenFromOwner(from, tokenId);
         }
 
-        // Transfered token will change ownership
         if (to != from) {
             _addTokenToOwner(to, tokenId);
         }
@@ -179,5 +174,20 @@ contract NftMarket is ERC721URIStorage {
         uint256 length = ERC721.balanceOf(to);
         _ownedTokens[to][length] = tokenId;
         _idToOwnedIndex[tokenId] = length;
+    }
+
+    function _removeTokenFromOwner(address from, uint256 tokenId) private {
+        uint256 lastIndex = ERC721.balanceOf(from) - 1;
+        uint tokenIndex = _idToOwnedIndex[tokenId];
+
+        if (tokenIndex != lastIndex) {
+            uint256 lastTokenId = _ownedTokens[from][lastIndex];
+
+            _ownedTokens[from][tokenIndex] = lastTokenId;
+            _idToOwnedIndex[lastTokenId] = tokenIndex;
+        }
+
+        delete _idToOwnedIndex[tokenId];
+        delete _ownedTokens[from][lastIndex];
     }
 }

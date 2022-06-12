@@ -130,4 +130,33 @@ contract("NftMarket", (accounts) => {
       assert.equal(tokens[0].tokenId, 1, "accounts[1] should own token 1");
     });
   });
+
+  describe("Token transfer to another account", () => {
+    before(async () => {
+      await _contract.transferFrom(accounts[0], accounts[1], 2, {
+        from: accounts[0],
+      });
+    });
+
+    it("accounts[0] should own 0 tokens", async () => {
+      const tokens = await _contract.getOwnedTokens({ from: accounts[0] });
+      assert.equal(tokens.length, 0, "accounts[0] owns more than 0 tokens");
+    });
+
+    it("accounts[1] should own 2 tokens", async () => {
+      const tokens = await _contract.getOwnedTokens({ from: accounts[1] });
+      assert.equal(tokens.length, 2, "accounts[1] does not own 2 tokens");
+    });
+
+    it("Should not transfer token not owned", async () => {
+      try {
+        await _contract.transferFrom(accounts[0], accounts[1], 1, {
+          from: accounts[0],
+        });
+        assert.fail("Should not be possible to transfer token not owned");
+      } catch (e) {
+        assert.ok(true, "Should not be possible to transfer token not owned");
+      }
+    });
+  });
 });
