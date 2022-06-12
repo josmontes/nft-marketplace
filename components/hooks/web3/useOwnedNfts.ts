@@ -3,20 +3,20 @@ import { Nft } from "@_types/nft";
 import { ethers } from "ethers";
 import useSWR from "swr";
 
-type UseListedNftsResponse = {};
+type UseOwnedNftsResponse = {};
 
-type ListedNftsHookFactory = HookFactory<Nft[], UseListedNftsResponse>;
+type OwnedNftsHookFactory = HookFactory<Nft[], UseOwnedNftsResponse>;
 
-export type UseListedNftsHook = ReturnType<ListedNftsHookFactory>;
+export type UseOwnedNftsHook = ReturnType<OwnedNftsHookFactory>;
 
-export const hookFactory: ListedNftsHookFactory =
+export const hookFactory: OwnedNftsHookFactory =
   ({ contract }) =>
   () => {
     const { data, isValidating, ...swr } = useSWR(
-      contract ? "web3/useListedNfts" : null,
+      contract ? "web3/useOwnedNfts" : null,
       async () => {
         const nfts = [] as Nft[];
-        const coreNfts = await contract!.getAllTokensOnSale();
+        const coreNfts = await contract!.getOwnedTokens();
         for (let item of coreNfts) {
           const tokenURI = await contract!.tokenURI(item.tokenId);
           const metaRes = await fetch(tokenURI);

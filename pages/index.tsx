@@ -7,7 +7,6 @@ import { useListedNfts } from "@hooks/web3";
 
 const Home: NextPage = () => {
   const { nfts } = useListedNfts();
-  console.log(nfts);
 
   return (
     <BaseLayout>
@@ -24,7 +23,7 @@ const Home: NextPage = () => {
               Mint a NFT to get unlimited ownership forever!
             </p>
           </div>
-          <NftList nfts={nfts?.data as NftMeta[]} />
+          <NftList nfts={nfts.data} />
         </div>
       </div>
     </BaseLayout>
