@@ -19,8 +19,11 @@ contract NftMarket is ERC721URIStorage {
     Counters.Counter private _listedTokens;
     Counters.Counter private _tokenIds;
 
+    uint256[] private _allTokens;
+
     mapping(string => bool) private _usedTokenURIs;
     mapping(uint256 => Token) private _idToToken;
+    mapping(uint256 => uint256) private _idToTokenIndex;
 
     event TokenCreated(
         uint256 tokenId,
@@ -41,6 +44,33 @@ contract NftMarket is ERC721URIStorage {
 
     function tokenURIExists(string memory tokenURI) public view returns (bool) {
         return _usedTokenURIs[tokenURI];
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return _allTokens.length;
+    }
+
+    function getTokenByIndex(uint256 index) public view returns (uint256) {
+        require(index < totalSupply(), "Index out of bounds");
+        return _allTokens[index];
+    }
+
+    function getAllTokensOnSale() public view returns (Token[] memory) {
+        uint256 allTokensCount = totalSupply();
+        uint256 currentIndex = 0;
+        Token[] memory tokens = new Token[](_listedTokens.current());
+
+        for (uint256 i = 0; i < allTokensCount; i++) {
+            uint256 tokenId = getTokenByIndex(i);
+            Token storage token = _idToToken[tokenId];
+
+            if (token.isListed) {
+                tokens[currentIndex] = token;
+                currentIndex++;
+            }
+        }
+
+        return tokens;
     }
 
     function mintToken(string memory tokenURI, uint256 price)
@@ -89,5 +119,23 @@ contract NftMarket is ERC721URIStorage {
         _idToToken[tokenId] = Token(tokenId, price, msg.sender, true);
 
         emit TokenCreated(tokenId, price, msg.sender, true);
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        super._beforeTokenTransfer(from, to, tokenId);
+
+        // Minted token will be added to the list of tokens
+        if (from == address(0)) {
+            _addTokenToAllTokens(tokenId);
+        }
+    }
+
+    function _addTokenToAllTokens(uint256 tokenId) private {
+        _idToTokenIndex[tokenId] = _allTokens.length;
+        _allTokens.push(tokenId);
     }
 }

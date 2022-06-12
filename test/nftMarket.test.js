@@ -89,4 +89,31 @@ contract("NftMarket", (accounts) => {
       );
     });
   });
+
+  describe("Token transfers", () => {
+    before(async () => {
+      await _contract.mintToken("https://example.com/token/2", _nftPrice, {
+        from: accounts[0],
+        value: _listingPrice,
+      });
+    });
+
+    it("Should have two tokens created", async () => {
+      const totalSupply = await _contract.totalSupply();
+      assert.equal(totalSupply.toNumber(), 2, "Total supply is not 2");
+    });
+
+    it("Should be able to retrieve token by index", async () => {
+      const token1 = await _contract.getTokenByIndex(0);
+      const token2 = await _contract.getTokenByIndex(1);
+      assert.equal(token1, 1, "Token ID is not 1");
+      assert.equal(token2, 2, "Token ID is not 2");
+    });
+
+    it("Should have only 1 listed token", async () => {
+      const tokens = await _contract.getAllTokensOnSale();
+      assert.equal(tokens.length, 1, "There should be only 1 listed token");
+      assert.equal(tokens[0].tokenId, 2, "Listed token should be token 2");
+    });
+  });
 });
