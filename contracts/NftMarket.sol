@@ -105,10 +105,10 @@ contract NftMarket is ERC721URIStorage, Ownable {
         return tokens;
     }
 
-    // function burnToken (uint256 tokenId) public {
-    //     require(ERC721.ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
-    //     _burn(tokenId);
-    // }
+    function burnToken (uint256 tokenId) public {
+        require(ERC721.ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
+        _burn(tokenId);
+    }
 
     function mintToken(string memory tokenURI, uint256 price)
         public
