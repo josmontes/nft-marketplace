@@ -116,4 +116,18 @@ contract("NftMarket", (accounts) => {
       assert.equal(tokens[0].tokenId, 2, "Listed token should be token 2");
     });
   });
+
+  describe("Owned tokens", () => {
+    it("accounts[0] Should own 1 token", async () => {
+      const tokens = await _contract.getOwnedTokens({ from: accounts[0] });
+      assert.equal(tokens.length, 1, "accounts[0] should own 1 token");
+      assert.equal(tokens[0].tokenId, 2, "accounts[0] should own token 2");
+    });
+
+    it("accounts[1] Should own 1 token", async () => {
+      const tokens = await _contract.getOwnedTokens({ from: accounts[1] });
+      assert.equal(tokens.length, 1, "accounts[1] should own 1 token");
+      assert.equal(tokens[0].tokenId, 1, "accounts[1] should own token 1");
+    });
+  });
 });

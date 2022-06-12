@@ -19,10 +19,13 @@ contract NftMarket is ERC721URIStorage {
     Counters.Counter private _listedTokens;
     Counters.Counter private _tokenIds;
 
-    uint256[] private _allTokens;
-
     mapping(string => bool) private _usedTokenURIs;
     mapping(uint256 => Token) private _idToToken;
+
+    mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
+    mapping(uint256 => uint256) private _idToOwnedIndex;
+
+    uint256[] private _allTokens;
     mapping(uint256 => uint256) private _idToTokenIndex;
 
     event TokenCreated(
@@ -55,6 +58,15 @@ contract NftMarket is ERC721URIStorage {
         return _allTokens[index];
     }
 
+    function getTokenByOwnerIndex(address owner, uint256 index)
+        public
+        view
+        returns (uint256)
+    {
+        require(index < ERC721.balanceOf(owner), "Index out of bounds");
+        return _ownedTokens[owner][index];
+    }
+
     function getAllTokensOnSale() public view returns (Token[] memory) {
         uint256 allTokensCount = totalSupply();
         uint256 currentIndex = 0;
@@ -71,6 +83,25 @@ contract NftMarket is ERC721URIStorage {
         }
 
         return tokens;
+    }
+
+    function getOwnedTokens()
+        public
+        view
+        returns (Token[] memory)
+    {
+        uint256 ownedTokensCount = ERC721.balanceOf(msg.sender);
+        Token[] memory tokens = new Token[](ownedTokensCount);
+
+        for (uint256 i = 0; i < ownedTokensCount; i++) {
+            uint256 tokenId = getTokenByOwnerIndex(msg.sender, i);
+            Token storage token = _idToToken[tokenId];
+
+            tokens[i] = token;
+        }
+
+        return tokens;
+
     }
 
     function mintToken(string memory tokenURI, uint256 price)
@@ -132,10 +163,21 @@ contract NftMarket is ERC721URIStorage {
         if (from == address(0)) {
             _addTokenToAllTokens(tokenId);
         }
+
+        // Transfered token will change ownership
+        if (to != from) {
+            _addTokenToOwner(to, tokenId);
+        }
     }
 
     function _addTokenToAllTokens(uint256 tokenId) private {
         _idToTokenIndex[tokenId] = _allTokens.length;
         _allTokens.push(tokenId);
+    }
+
+    function _addTokenToOwner(address to, uint256 tokenId) private {
+        uint256 length = ERC721.balanceOf(to);
+        _ownedTokens[to][length] = tokenId;
+        _idToOwnedIndex[tokenId] = length;
     }
 }
