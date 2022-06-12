@@ -2,7 +2,7 @@
 
 import { Disclosure, Menu } from "@headlessui/react";
 import { BellIcon, MenuIcon, XIcon } from "@heroicons/react/outline";
-import { useAccount } from "@hooks/web3";
+import { useAccount, useNetwork } from "@hooks/web3";
 import Link from "next/link";
 import ActiveLink from "../link";
 import Walletbar from "./Walletbar";
@@ -18,8 +18,7 @@ function classNames(...classes: string[]) {
 
 export default function Navbar() {
   const { account } = useAccount();
-
-  console.log(account);
+  const { network } = useNetwork();
 
   return (
     <Disclosure as="nav" className="bg-gray-800">
@@ -28,7 +27,6 @@ export default function Navbar() {
           <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
             <div className="relative flex items-center justify-between h-16">
               <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-                {/* Mobile menu butt*/}
                 <Disclosure.Button className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
                   <span className="sr-only">Open main menu</span>
                   {open ? (
@@ -66,6 +64,24 @@ export default function Navbar() {
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+                <div className="text-gray-300 self-center mr-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-purple-100 text-purple-800">
+                    <svg
+                      className="-ml-0.5 mr-1.5 h-2 w-2 text-indigo-400"
+                      fill="currentColor"
+                      viewBox="0 0 8 8"
+                    >
+                      <circle cx={4} cy={4} r={3} />
+                    </svg>
+                    {network.isLoading
+                      ? "Loading..."
+                      : account.isInstalled
+                      ? network.isSupported
+                        ? network.data
+                        : `${network.data} (unsupported)`
+                      : "Install metamask"}
+                  </span>
+                </div>
                 <Walletbar
                   isInstalled={account.isInstalled}
                   isLoading={account.isLoading}

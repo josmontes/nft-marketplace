@@ -13,7 +13,7 @@ type AccountHookFactory = HookFactory<string, UseAccountResponse>;
 export type UseAccountHook = ReturnType<AccountHookFactory>;
 
 export const hookFactory: AccountHookFactory =
-  ({ ethereum, contract, provider, isLoading }) =>
+  ({ ethereum, provider, isLoading }) =>
   () => {
     const { data, mutate, isValidating, ...swr } = useSWR(
       provider ? "web3/useAccount" : null,
@@ -27,6 +27,7 @@ export const hookFactory: AccountHookFactory =
       },
       {
         revalidateOnFocus: false,
+        shouldRetryOnError: false,
       }
     );
 
@@ -38,7 +39,6 @@ export const hookFactory: AccountHookFactory =
     });
 
     const handleAccountChange = (...args: unknown[]) => {
-      console.log("account change", args);
       const accounts = args[0] as string[];
       if (accounts.length === 0) console.error("Connect to MetaMask");
       else if (accounts[0] !== data) {
@@ -58,7 +58,7 @@ export const hookFactory: AccountHookFactory =
       ...swr,
       data,
       isValidating,
-      isLoading: isLoading || isValidating,
+      isLoading: isLoading as boolean,
       isInstalled: ethereum?.isMetaMask || false,
       mutate,
       connect,
