@@ -3,8 +3,9 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NftMarket is ERC721URIStorage {
+contract NftMarket is ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
 
     struct Token {
@@ -36,6 +37,11 @@ contract NftMarket is ERC721URIStorage {
     );
 
     constructor() ERC721("CreaturesNFT", "CNFT") {}
+
+    function setListingPrice(uint256 newPrice) external onlyOwner {
+        require(newPrice > 0, "Price must be greater than 0");
+        listingPrice = newPrice;
+    }
 
     function getToken(uint256 tokenId) public view returns (Token memory) {
         return _idToToken[tokenId];
@@ -99,10 +105,10 @@ contract NftMarket is ERC721URIStorage {
         return tokens;
     }
 
-    function burnToken (uint256 tokenId) public {
-        require(ERC721.ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
-        _burn(tokenId);
-    }
+    // function burnToken (uint256 tokenId) public {
+    //     require(ERC721.ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
+    //     _burn(tokenId);
+    // }
 
     function mintToken(string memory tokenURI, uint256 price)
         public
@@ -142,6 +148,22 @@ contract NftMarket is ERC721URIStorage {
 
         _transfer(owner, msg.sender, tokenId);
         payable(owner).transfer(msg.value);
+    }
+
+    function listToken(uint256 tokenId, uint256 newPrice) public payable {
+        require(
+            ERC721.ownerOf(tokenId) == msg.sender,
+            "You are not the owner of this token"
+        );
+        require(
+            msg.value == listingPrice,
+            "Price does not match listing price"
+        );
+        require(!_idToToken[tokenId].isListed, "Token is already listed");
+
+        _idToToken[tokenId].isListed = true;
+        _idToToken[tokenId].price = newPrice;
+        _listedTokens.increment();
     }
 
     function _createToken(uint256 tokenId, uint256 price) private {
@@ -185,7 +207,7 @@ contract NftMarket is ERC721URIStorage {
 
     function _removeTokenFromOwner(address from, uint256 tokenId) private {
         uint256 lastIndex = ERC721.balanceOf(from) - 1;
-        uint tokenIndex = _idToOwnedIndex[tokenId];
+        uint256 tokenIndex = _idToOwnedIndex[tokenId];
 
         if (tokenIndex != lastIndex) {
             uint256 lastTokenId = _ownedTokens[from][lastIndex];
