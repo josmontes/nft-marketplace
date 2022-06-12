@@ -99,6 +99,11 @@ contract NftMarket is ERC721URIStorage {
         return tokens;
     }
 
+    function burnToken (uint256 tokenId) public {
+        require(ERC721.ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
+        _burn(tokenId);
+    }
+
     function mintToken(string memory tokenURI, uint256 price)
         public
         payable
@@ -160,7 +165,9 @@ contract NftMarket is ERC721URIStorage {
             _removeTokenFromOwner(from, tokenId);
         }
 
-        if (to != from) {
+        if (to == address(0)) {
+            _removeTokenFromAllTokens(tokenId);
+        } else if (to != from) {
             _addTokenToOwner(to, tokenId);
         }
     }
@@ -189,5 +196,17 @@ contract NftMarket is ERC721URIStorage {
 
         delete _idToOwnedIndex[tokenId];
         delete _ownedTokens[from][lastIndex];
+    }
+
+    function _removeTokenFromAllTokens(uint256 tokenId) private {
+        uint256 lastIndex = _allTokens.length - 1;
+        uint256 tokenIndex = _idToTokenIndex[tokenId];
+        uint256 lastTokenId = _allTokens[lastIndex];
+
+        _allTokens[tokenIndex] = lastTokenId;
+        _idToTokenIndex[lastTokenId] = tokenIndex;
+
+        delete _idToTokenIndex[tokenId];
+        _allTokens.pop();
     }
 }

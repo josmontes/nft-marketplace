@@ -159,4 +159,24 @@ contract("NftMarket", (accounts) => {
       }
     });
   });
+
+  describe("Burn token", () => {
+    before(async () => {
+      await _contract.mintToken("https://example.com/token/3", _nftPrice, {
+        from: accounts[2],
+        value: _listingPrice,
+      });
+    });
+
+    it("accounts[2] should own 1 token", async () => {
+      const tokens = await _contract.getOwnedTokens({ from: accounts[2] });
+      assert.equal(tokens.length, 1, "accounts[2] does not own 1 token");
+    });
+
+    it("Should burn token", async () => {
+      await _contract.burnToken(3, { from: accounts[2] });
+      const tokens = await _contract.getOwnedTokens({ from: accounts[2] });
+      assert.equal(tokens.length, 0, "accounts[2] owns more than 0 tokens");
+    });
+  });
 });
