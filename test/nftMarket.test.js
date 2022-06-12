@@ -20,12 +20,12 @@ contract("NftMarket", (accounts) => {
       });
     });
 
-    it("Owner of first token should be address[0]", async () => {
+    it("Owner of first token should be accounts[0]", async () => {
       const owner = await _contract.ownerOf(1);
       assert.equal(
         owner,
         accounts[0],
-        "Owner of first token is not address[0]"
+        "Owner of first token is not accounts[0]"
       );
     });
 
@@ -43,21 +43,50 @@ contract("NftMarket", (accounts) => {
       }
     });
 
-    it("Should have one listed item", async () => {
-      const listedItemsCount = await _contract.listedItemsCount();
+    it("Should have one listed token", async () => {
+      const listedTokensCount = await _contract.listedTokensCount();
       assert.equal(
-        listedItemsCount.toNumber(),
+        listedTokensCount.toNumber(),
         1,
-        "Count of listed items is not 1"
+        "Count of listed tokens is not 1"
       );
     });
 
-    it("Item should be created", async () => {
-      const item = await _contract.getItem(1);
-      assert.equal(item.tokenId, 1, "Token ID is not 1");
-      assert.equal(item.price, _nftPrice, "Price is not _nftPrice");
-      assert.equal(item.owner, accounts[0], "Owner is not accounts[0]");
-      assert.equal(item.isListed, true, "Item is not listed");
+    it("Token should be created", async () => {
+      const token = await _contract.getToken(1);
+      assert.equal(token.tokenId, 1, "Token ID is not 1");
+      assert.equal(token.price, _nftPrice, "Price is not _nftPrice");
+      assert.equal(token.creator, accounts[0], "Creator is not accounts[0]");
+      assert.equal(token.isListed, true, "Token is not listed");
+    });
+  });
+
+  describe("Buy token", () => {
+    before(async () => {
+      await _contract.buyToken(1, { from: accounts[1], value: _nftPrice });
+    });
+
+    it("Should unlist token", async () => {
+      const token = await _contract.getToken(1);
+      assert.equal(token.isListed, false, "Token is not unlisted");
+    });
+
+    it("Should decrease listed token count", async () => {
+      const listedTokensCount = await _contract.listedTokensCount();
+      assert.equal(
+        listedTokensCount.toNumber(),
+        0,
+        "Count of listed tokens is not 0"
+      );
+    });
+
+    it("Should change owner", async () => {
+      const owner = await _contract.ownerOf(1);
+      assert.equal(
+        owner,
+        accounts[1],
+        "Owner of first token is not accounts[1]"
+      );
     });
   });
 });

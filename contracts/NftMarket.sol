@@ -7,36 +7,36 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract NftMarket is ERC721URIStorage {
     using Counters for Counters.Counter;
 
-    struct Item {
+    struct Token {
         uint256 tokenId;
         uint256 price;
-        address owner;
+        address creator;
         bool isListed;
     }
 
-    uint public listingPrice = 0.025 ether;
+    uint256 public listingPrice = 0.025 ether;
 
-    Counters.Counter private _listedItems;
+    Counters.Counter private _listedTokens;
     Counters.Counter private _tokenIds;
 
     mapping(string => bool) private _usedTokenURIs;
-    mapping(uint256 => Item) private _idToItem;
+    mapping(uint256 => Token) private _idToToken;
 
-    event ItemCreated(
+    event TokenCreated(
         uint256 tokenId,
         uint256 price,
-        address owner,
+        address creator,
         bool isListed
     );
 
     constructor() ERC721("CreaturesNFT", "CNFT") {}
 
-    function getItem(uint256 tokenId) public view returns (Item memory) {
-        return _idToItem[tokenId];
+    function getToken(uint256 tokenId) public view returns (Token memory) {
+        return _idToToken[tokenId];
     }
 
-    function listedItemsCount() public view returns (uint256) {
-        return _listedItems.current();
+    function listedTokensCount() public view returns (uint256) {
+        return _listedTokens.current();
     }
 
     function tokenURIExists(string memory tokenURI) public view returns (bool) {
@@ -49,10 +49,13 @@ contract NftMarket is ERC721URIStorage {
         returns (uint256)
     {
         require(!tokenURIExists(tokenURI), "Token URI already exists");
-        require(msg.value == listingPrice, "Price does not match listing price");
+        require(
+            msg.value == listingPrice,
+            "Price does not match listing price"
+        );
 
         _tokenIds.increment();
-        _listedItems.increment();
+        _listedTokens.increment();
 
         uint256 tokenId = _tokenIds.current();
 
@@ -61,16 +64,30 @@ contract NftMarket is ERC721URIStorage {
 
         _usedTokenURIs[tokenURI] = true;
 
-        _createItem(tokenId, price);
+        _createToken(tokenId, price);
 
         return tokenId;
     }
 
-    function _createItem(uint256 tokenId, uint256 price) private {
+    function buyToken(uint256 tokenId) public payable {
+        uint256 price = _idToToken[tokenId].price;
+        address owner = ERC721.ownerOf(tokenId);
+
+        require(owner != msg.sender, "You cannot buy your own token");
+        require(msg.value == price, "Price does not match");
+
+        _idToToken[tokenId].isListed = false;
+        _listedTokens.decrement();
+
+        _transfer(owner, msg.sender, tokenId);
+        payable(owner).transfer(msg.value);
+    }
+
+    function _createToken(uint256 tokenId, uint256 price) private {
         require(price > 0, "Price must be greater than 0");
 
-        _idToItem[tokenId] = Item(tokenId, price, msg.sender, true);
+        _idToToken[tokenId] = Token(tokenId, price, msg.sender, true);
 
-        emit ItemCreated(tokenId, price, msg.sender, true);
+        emit TokenCreated(tokenId, price, msg.sender, true);
     }
 }
