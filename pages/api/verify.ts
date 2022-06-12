@@ -1,8 +1,15 @@
 import { v4 as uuidv4 } from "uuid";
 import { Session } from "next-iron-session";
 import { NextApiRequest, NextApiResponse } from "next";
-import { withSession, contractAddress, addressCheckMiddleware } from "./utils";
+import {
+  withSession,
+  contractAddress,
+  addressCheckMiddleware,
+  pinataApiKey,
+  pinataSecret,
+} from "./utils";
 import { NftMeta } from "@_types/nft";
+import axios from "axios";
 
 export default withSession(
   async (req: NextApiRequest & { session: Session }, res: NextApiResponse) => {
@@ -28,9 +35,26 @@ export default withSession(
 
         await addressCheckMiddleware(req, res);
 
-        return res.status(200).send({ message: "OK" });
-      } catch (e) {
-        return res.status(422).send({ message: "Cannot verify message" });
+        const response = await axios.post(
+          "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+          {
+            pinataMetadata: {
+              name: uuidv4(),
+            },
+            pinataContent: nft,
+          },
+          {
+            headers: {
+              pinata_api_key: pinataApiKey,
+              pinata_secret_api_key: pinataSecret,
+            },
+          }
+        );
+
+        return res.status(200).send(response.data);
+      } catch (e: any) {
+        console.log(e.response.data);
+        return res.status(422).send(e.message);
       }
     } else return res.status(405).json({ error: "Method not allowed" });
   }

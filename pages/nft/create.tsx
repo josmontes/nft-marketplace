@@ -5,7 +5,7 @@ import { ChangeEvent, FormEvent, useState } from "react";
 import { BaseLayout } from "@ui";
 import { Switch } from "@headlessui/react";
 import Link from "next/link";
-import { NftMeta } from "@_types/nft";
+import { NftMeta, PinataRes } from "@_types/nft";
 import axios from "axios";
 import { useWeb3 } from "@providers/web3";
 
@@ -46,28 +46,65 @@ const NftCreate: NextPage = () => {
     });
   };
 
+  const getSignedData = async () => {
+    const messageToSign = await axios.get("/api/verify");
+    const accounts = (await ethereum?.request({
+      method: "eth_requestAccounts",
+    })) as string[];
+
+    const signedData = await ethereum?.request({
+      method: "personal_sign",
+      params: [
+        JSON.stringify(messageToSign.data),
+        accounts[0],
+        messageToSign.data.id,
+      ],
+    });
+
+    return { signedData, account: accounts[0] };
+  };
+
+  const imageHander = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) {
+      console.error("No files");
+      return;
+    }
+
+    const file = e.target.files[0];
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+
+    try {
+      const { signedData, account } = await getSignedData();
+
+      const res = await axios.post("/api/verify-image", {
+        address: account,
+        signature: signedData,
+        bytes,
+        contentType: file.type,
+        fileName: file.name.replace(/\.[^/.]+$/, ""),
+      });
+
+      const data = res.data as PinataRes;
+
+      setNftMeta({
+        ...nftMeta,
+        image: `${process.env.NEXT_PUBLIC_PINATA_DOMAIN}/ipfs/${data.IpfsHash}`,
+      });
+    } catch (e: any) {
+      console.error(e.message);
+    }
+  };
+
   const submitHandler = async () => {
     try {
-      const messageToSign = await axios.get("/api/verify");
-      const accounts = (await ethereum?.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-
-      const signedData = await ethereum?.request({
-        method: "personal_sign",
-        params: [
-          JSON.stringify(messageToSign.data),
-          accounts[0],
-          messageToSign.data.id,
-        ],
-      });
+      const { signedData, account } = await getSignedData();
 
       await axios.post("/api/verify", {
-        address: accounts[0],
+        address: account,
         signature: signedData,
-        nft: nftMeta
+        nft: nftMeta,
       });
-
     } catch (e) {
       console.error(e);
     }
@@ -236,7 +273,7 @@ const NftCreate: NextPage = () => {
                       </p>
                     </div>
                     {/* Has Image? */}
-                    {false ? (
+                    {nftMeta.image ? (
                       <img
                         src="https://eincode.mypinata.cloud/ipfs/QmaQYCrX9Fg2kGijqapTYgpMXV7QPPzMwGrSRfV9TvTsfM/Creature_1.png"
                         alt=""
@@ -274,6 +311,7 @@ const NftCreate: NextPage = () => {
                                   name="file-upload"
                                   type="file"
                                   className="sr-only"
+                                  onChange={imageHander}
                                 />
                               </label>
                               <p className="pl-1">or drag and drop</p>
