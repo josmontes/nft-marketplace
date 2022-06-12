@@ -8,13 +8,15 @@ import Link from "next/link";
 import { NftMeta, PinataRes } from "@_types/nft";
 import axios from "axios";
 import { useWeb3 } from "@providers/web3";
+import { ethers } from "ethers";
 
-const ATTRIBUTES = ["health", "attack", "speed"];
+const ALLOWED_FIELDS = ["name", "description", "image", "attributes"];
 
 const NftCreate: NextPage = () => {
-  const { ethereum } = useWeb3();
+  const { ethereum, contract } = useWeb3();
   const [nftURI, setNftURI] = useState("");
   const [hasURI, setHasURI] = useState(false);
+  const [price, setPrice] = useState("");
 
   const [nftMeta, setNftMeta] = useState<NftMeta>({
     name: "",
@@ -100,13 +102,43 @@ const NftCreate: NextPage = () => {
     try {
       const { signedData, account } = await getSignedData();
 
-      await axios.post("/api/verify", {
+      const res = await axios.post("/api/verify", {
         address: account,
         signature: signedData,
         nft: nftMeta,
       });
+      const data = res.data as PinataRes;
+      setNftURI(
+        `${process.env.NEXT_PUBLIC_PINATA_DOMAIN}/ipfs/${data.IpfsHash}`
+      );
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const createNft = async () => {
+    try {
+      const res = await axios.get(nftURI);
+      const data = res.data;
+
+      Object.keys(data).forEach((key) => {
+        if (!ALLOWED_FIELDS.includes(key)) {
+          throw new Error("Invalid JSON data");
+        }
+      });
+      const listingPrice = await contract?.listingPrice();
+      const tx = await contract?.mintToken(
+        nftURI,
+        ethers.utils.parseEther(price),
+        {
+          value: listingPrice,
+        }
+      );
+
+      await tx?.wait();
+      alert("NFT created");
+    } catch (e: any) {
+      console.error(e.message);
     }
   };
 
@@ -197,7 +229,8 @@ const NftCreate: NextPage = () => {
                           name="price"
                           id="price"
                           className="focus:ring-indigo-500 focus:border-indigo-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-gray-300"
-                          placeholder="0.8"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
                         />
                       </div>
                     </div>
@@ -206,6 +239,7 @@ const NftCreate: NextPage = () => {
                     <button
                       type="button"
                       className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      onClick={createNft}
                     >
                       List
                     </button>
@@ -274,11 +308,7 @@ const NftCreate: NextPage = () => {
                     </div>
                     {/* Has Image? */}
                     {nftMeta.image ? (
-                      <img
-                        src="https://eincode.mypinata.cloud/ipfs/QmaQYCrX9Fg2kGijqapTYgpMXV7QPPzMwGrSRfV9TvTsfM/Creature_1.png"
-                        alt=""
-                        className="h-40"
-                      />
+                      <img src={nftMeta.image} alt="" className="h-40" />
                     ) : (
                       <div>
                         <label className="block text-sm font-medium text-gray-700">
