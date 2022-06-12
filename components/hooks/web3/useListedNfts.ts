@@ -1,9 +1,12 @@
 import { HookFactory } from "@_types/hooks";
 import { Nft } from "@_types/nft";
 import { ethers } from "ethers";
+import { useCallback } from "react";
 import useSWR from "swr";
 
-type UseListedNftsResponse = {};
+type UseListedNftsResponse = {
+  buyNft: (tokenId: number, value: number) => Promise<void>;
+};
 
 type ListedNftsHookFactory = HookFactory<Nft[], UseListedNftsResponse>;
 
@@ -12,7 +15,7 @@ export type UseListedNftsHook = ReturnType<ListedNftsHookFactory>;
 export const hookFactory: ListedNftsHookFactory =
   ({ contract }) =>
   () => {
-    const { data, isValidating, ...swr } = useSWR(
+    const { data, ...swr } = useSWR(
       contract ? "web3/useListedNfts" : null,
       async () => {
         const nfts = [] as Nft[];
@@ -33,9 +36,25 @@ export const hookFactory: ListedNftsHookFactory =
       }
     );
 
+    const _contract = contract;
+    const buyNft = useCallback(
+      async (tokenId: number, value: number) => {
+        try {
+          const result = await _contract!.buyToken(tokenId, {
+            value: ethers.utils.parseEther(value.toString()),
+          });
+          await result?.wait();
+          alert("Successfully bought NFT");
+        } catch (e) {
+          console.error(e);
+        }
+      },
+      [_contract]
+    );
+
     return {
       ...swr,
+      buyNft,
       data: data ?? [],
-      isValidating,
     };
   };

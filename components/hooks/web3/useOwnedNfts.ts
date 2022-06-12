@@ -1,9 +1,12 @@
 import { HookFactory } from "@_types/hooks";
 import { Nft } from "@_types/nft";
 import { ethers } from "ethers";
+import { useCallback } from "react";
 import useSWR from "swr";
 
-type UseOwnedNftsResponse = {};
+type UseOwnedNftsResponse = {
+  listNft: (tokenId: number, price: number) => Promise<void>;
+};
 
 type OwnedNftsHookFactory = HookFactory<Nft[], UseOwnedNftsResponse>;
 
@@ -33,8 +36,30 @@ export const hookFactory: OwnedNftsHookFactory =
       }
     );
 
+    const _contract = contract;
+    const listNft = useCallback(
+      async (tokenId: number, price: number) => {
+        try {
+          const listingPrice = await _contract!.listingPrice();
+          const result = await _contract!.listToken(
+            tokenId,
+            ethers.utils.parseEther(price.toString()),
+            {
+              value: listingPrice,
+            }
+          );
+          await result?.wait();
+          alert("NFT listed successfully");
+        } catch (e) {
+          console.error(e);
+        }
+      },
+      [_contract]
+    );
+
     return {
       ...swr,
+      listNft,
       data: data ?? [],
       isValidating,
     };
