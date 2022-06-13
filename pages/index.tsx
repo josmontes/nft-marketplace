@@ -6,6 +6,7 @@ import { useNetwork } from "@hooks/web3";
 import { ExclamationIcon } from "@heroicons/react/outline";
 
 const Home: NextPage = () => {
+  
   const { network } = useNetwork();
 
   return (
