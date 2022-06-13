@@ -3,7 +3,6 @@
 import type { NextPage } from "next";
 import { BaseLayout } from "@ui";
 
-import nfts from "../content/meta.json";
 import { Nft } from "@_types/nft";
 import { useOwnedNfts } from "@hooks/web3";
 import { useEffect, useState } from "react";

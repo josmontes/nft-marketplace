@@ -7,6 +7,7 @@ import * as util from "ethereumjs-util";
 
 const NETWORKS = {
   "5777": "Ganache Local Network",
+  "3": "Ropsten Test Network",
 };
 type NETWORK = typeof NETWORKS;
 
@@ -28,6 +29,11 @@ export function withSession(handler: any) {
   });
 }
 
+const url =
+  process.env.NODE_ENV === "production"
+    ? process.env.INFURA_ROPSTEN_URL
+    : "http://localhost:7545";
+
 export const addressCheckMiddleware = async (
   req: NextApiRequest & { session: Session },
   res: NextApiResponse
@@ -35,9 +41,7 @@ export const addressCheckMiddleware = async (
   return new Promise(async (resolve, reject) => {
     const { session } = req;
     const message = session.get("message-session");
-    const provider = new ethers.providers.JsonRpcProvider(
-      "http://localhost:7545"
-    );
+    const provider = new ethers.providers.JsonRpcProvider(url);
     const contract = new ethers.Contract(
       contractAddress,
       abi,
