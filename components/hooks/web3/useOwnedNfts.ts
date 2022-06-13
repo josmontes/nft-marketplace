@@ -2,6 +2,7 @@ import { HookFactory } from "@_types/hooks";
 import { Nft } from "@_types/nft";
 import { ethers } from "ethers";
 import { useCallback } from "react";
+import { toast } from "react-toastify";
 import useSWR from "swr";
 
 type UseOwnedNftsResponse = {
@@ -48,8 +49,11 @@ export const hookFactory: OwnedNftsHookFactory =
               value: listingPrice,
             }
           );
-          await result?.wait();
-          alert("NFT listed successfully");
+          await toast.promise(result!.wait(), {
+            pending: "Listing NFT...",
+            success: "NFT listed!",
+            error: "NFT list failed!",
+          });
         } catch (e) {
           console.error(e);
         }
