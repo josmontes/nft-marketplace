@@ -1,1 +1,4 @@
-
+{
+  "PRIVATE_KEY": "<private_key>",
+  "INFURA_ROPSTEN_URL": "<ropsten_url>"
+}
